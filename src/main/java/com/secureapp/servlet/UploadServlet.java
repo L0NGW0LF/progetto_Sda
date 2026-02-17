@@ -91,7 +91,7 @@ public class UploadServlet extends HttpServlet {
             Future<String> uploadFuture = uploadService.processUploadAsync(
                     userId, originalFilename, fileContent, fileContent.length);
 
-            // Wait for upload to complete (we don't need the returned filename)
+            // Wait for upload to complete
             uploadFuture.get();
 
             // Redirect to dashboard with success message
