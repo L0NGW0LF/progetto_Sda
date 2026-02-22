@@ -6,7 +6,7 @@ import javax.servlet.http.*;
 import java.io.IOException;
 
 /**
- * Logout Servlet - Implements RF7
+ * Logout Servlet
  * Handles secure session termination:
  * - Invalidates session server-side
  * - Removes session cookies
@@ -30,22 +30,18 @@ public class LogoutServlet extends HttpServlet {
     private void performLogout(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        // Get current session
         HttpSession session = request.getSession(false);
 
         if (session != null) {
-            // Invalidate session server-side
             session.invalidate();
         }
 
-        // Remove session cookie by setting Max-Age to 0
         Cookie sessionCookie = new Cookie("JSESSIONID", "");
         sessionCookie.setPath(request.getContextPath() + "/");
-        sessionCookie.setMaxAge(0); // Delete cookie immediately
+        sessionCookie.setMaxAge(0);
         sessionCookie.setHttpOnly(true);
         response.addCookie(sessionCookie);
 
-        // Redirect to login page with logout confirmation
         response.sendRedirect(request.getContextPath() + "/login?logout=true");
     }
 }

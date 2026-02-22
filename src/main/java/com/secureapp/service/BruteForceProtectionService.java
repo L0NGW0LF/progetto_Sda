@@ -6,7 +6,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Brute-Force Protection Service - Implements requirement 4.4
+ * Brute-Force Protection Service
  * Provides rate limiting and account lockout to prevent credential guessing
  * attacks.
  * 
@@ -23,24 +23,17 @@ import java.util.concurrent.TimeUnit;
  */
 public class BruteForceProtectionService {
 
-    // Configuration constants
-    private static final int MAX_ATTEMPTS = 5; // Max failed login attempts before lockout
-    private static final long LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes lockout
-    private static final long CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // Cleanup every 1 hour
+    private static final int MAX_ATTEMPTS = 5;
+    private static final long LOCKOUT_DURATION_MS = 15 * 60 * 1000;
+    private static final long CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 
-    // Tracking maps for failed attempts
     private final ConcurrentHashMap<String, LoginAttemptInfo> ipAttempts;
     private final ConcurrentHashMap<String, LoginAttemptInfo> emailAttempts;
 
-    // Scheduler for automatic cleanup
     private final ScheduledExecutorService cleanupScheduler;
 
-    // Singleton instance
     private static volatile BruteForceProtectionService instance;
 
-    /**
-     * Get singleton instance.
-     */
     public static BruteForceProtectionService getInstance() {
         if (instance == null) {
             synchronized (BruteForceProtectionService.class) {
@@ -52,14 +45,10 @@ public class BruteForceProtectionService {
         return instance;
     }
 
-    /**
-     * Private constructor for singleton.
-     */
     private BruteForceProtectionService() {
         this.ipAttempts = new ConcurrentHashMap<>();
         this.emailAttempts = new ConcurrentHashMap<>();
 
-        // Start cleanup scheduler
         this.cleanupScheduler = Executors.newSingleThreadScheduledExecutor();
         this.cleanupScheduler.scheduleAtFixedRate(
                 this::cleanupOldEntries,
@@ -75,6 +64,7 @@ public class BruteForceProtectionService {
      * @param email Email address attempting to login
      * @return true if blocked (either IP or email is locked out)
      */
+
     public boolean isBlocked(String ip, String email) {
         if (ip == null || email == null) {
             return false;
@@ -83,9 +73,6 @@ public class BruteForceProtectionService {
         return isIpBlocked(ip) || isEmailBlocked(email);
     }
 
-    /**
-     * Check if specific IP is blocked.
-     */
     private boolean isIpBlocked(String ip) {
         LoginAttemptInfo info = ipAttempts.get(ip);
         if (info == null) {
@@ -94,12 +81,10 @@ public class BruteForceProtectionService {
 
         long now = System.currentTimeMillis();
 
-        // Check if lockout period has expired
         if (info.lockoutUntil > 0 && now < info.lockoutUntil) {
-            return true; // Still locked out
+            return true;
         }
 
-        // Lockout expired, reset
         if (info.lockoutUntil > 0 && now >= info.lockoutUntil) {
             ipAttempts.remove(ip);
             return false;
@@ -108,9 +93,6 @@ public class BruteForceProtectionService {
         return false;
     }
 
-    /**
-     * Check if specific email is blocked.
-     */
     private boolean isEmailBlocked(String email) {
         LoginAttemptInfo info = emailAttempts.get(email);
         if (info == null) {
@@ -119,12 +101,10 @@ public class BruteForceProtectionService {
 
         long now = System.currentTimeMillis();
 
-        // Check if lockout period has expired
         if (info.lockoutUntil > 0 && now < info.lockoutUntil) {
-            return true; // Still locked out
+            return true;
         }
 
-        // Lockout expired, reset
         if (info.lockoutUntil > 0 && now >= info.lockoutUntil) {
             emailAttempts.remove(email);
             return false;
@@ -147,17 +127,14 @@ public class BruteForceProtectionService {
 
         long now = System.currentTimeMillis();
 
-        // Record for IP
         LoginAttemptInfo ipInfo = ipAttempts.computeIfAbsent(ip, k -> new LoginAttemptInfo());
         ipInfo.failedAttempts++;
         ipInfo.lastAttemptTime = now;
 
-        // Record for email
         LoginAttemptInfo emailInfo = emailAttempts.computeIfAbsent(email, k -> new LoginAttemptInfo());
         emailInfo.failedAttempts++;
         emailInfo.lastAttemptTime = now;
 
-        // Check if lockout should be triggered
         if (ipInfo.failedAttempts >= MAX_ATTEMPTS) {
             ipInfo.lockoutUntil = now + LOCKOUT_DURATION_MS;
             System.err.println(String.format(
@@ -172,7 +149,6 @@ public class BruteForceProtectionService {
                     email, emailInfo.failedAttempts, LOCKOUT_DURATION_MS / 60000));
         }
 
-        // Log failed attempt (always, for monitoring)
         System.err.println(String.format(
                 "Failed login attempt - IP: %s, Email: %s, IP Attempts: %d/%d, Email Attempts: %d/%d",
                 ip, email, ipInfo.failedAttempts, MAX_ATTEMPTS, emailInfo.failedAttempts, MAX_ATTEMPTS));
@@ -190,7 +166,6 @@ public class BruteForceProtectionService {
             return;
         }
 
-        // Remove from tracking maps (reset counters)
         ipAttempts.remove(ip);
         emailAttempts.remove(email);
 
@@ -209,17 +184,14 @@ public class BruteForceProtectionService {
         int removedIp = 0;
         int removedEmail = 0;
 
-        // Remove old IP entries
         removedIp = ipAttempts.size();
         ipAttempts.entrySet().removeIf(entry -> {
             LoginAttemptInfo info = entry.getValue();
-            // Remove if lockout expired and no activity for lockout duration
             return (info.lockoutUntil > 0 && now > info.lockoutUntil) ||
                     (now - info.lastAttemptTime > LOCKOUT_DURATION_MS);
         });
         removedIp -= ipAttempts.size();
 
-        // Remove old email entries
         removedEmail = emailAttempts.size();
         emailAttempts.entrySet().removeIf(entry -> {
             LoginAttemptInfo info = entry.getValue();
@@ -261,10 +233,7 @@ public class BruteForceProtectionService {
         return maxLockout;
     }
 
-    /**
-     * Shutdown cleanup scheduler.
-     * Should be called when application is shutting down.
-     */
+    // Shutdown cleanup scheduler.
     public void shutdown() {
         if (cleanupScheduler != null && !cleanupScheduler.isShutdown()) {
             cleanupScheduler.shutdown();
@@ -279,12 +248,10 @@ public class BruteForceProtectionService {
         }
     }
 
-    /**
-     * Inner class to track login attempt information.
-     */
+    // Inner class to track login attempt information.
     private static class LoginAttemptInfo {
         int failedAttempts = 0;
         long lastAttemptTime = System.currentTimeMillis();
-        long lockoutUntil = 0; // 0 means not locked out
+        long lockoutUntil = 0;
     }
 }

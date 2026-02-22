@@ -20,7 +20,6 @@ class ValidationUtilTest {
 
     @Test
     void testSanitizeInput_WithTooLongInput_Truncates() {
-        // Java 8 compatible: build string manually instead of repeat()
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 300; i++) {
             sb.append("a");

@@ -12,7 +12,7 @@ import java.io.InputStream;
 import java.util.concurrent.Future;
 
 /**
- * Upload Servlet - Implements RF5 and 3.3
+ * Upload Servlet
  * Handles secure file upload with:
  * - File type validation using Apache Tika
  * - Extension whitelist enforcement
@@ -20,10 +20,7 @@ import java.util.concurrent.Future;
  * - TOCTOU protection through ConcurrentUploadService
  */
 @WebServlet("/upload")
-@MultipartConfig(maxFileSize = 5 * 1024 * 1024, // 5 MB max file size
-        maxRequestSize = 10 * 1024 * 1024, // 10 MB max request size
-        fileSizeThreshold = 1024 * 1024 // 1 MB threshold for disk storage
-)
+@MultipartConfig(maxFileSize = 5 * 1024 * 1024, maxRequestSize = 10 * 1024 * 1024, fileSizeThreshold = 1024 * 1024)
 public class UploadServlet extends HttpServlet {
 
     private final Tika tika = new Tika();
@@ -33,7 +30,6 @@ public class UploadServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Get user session
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("userId") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
@@ -42,7 +38,6 @@ public class UploadServlet extends HttpServlet {
 
         Integer userId = (Integer) session.getAttribute("userId");
 
-        // Get uploaded file
         Part filePart = request.getPart("file");
 
         if (filePart == null || filePart.getSize() == 0) {
@@ -50,24 +45,20 @@ public class UploadServlet extends HttpServlet {
             return;
         }
 
-        // Get original filename
         String originalFilename = getFileName(filePart);
         if (originalFilename == null || originalFilename.isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/dashboard?error=invalid_filename");
             return;
         }
 
-        // Validate file extension (whitelist)
         if (!originalFilename.toLowerCase().endsWith(".txt")) {
             response.sendRedirect(request.getContextPath() + "/dashboard?error=invalid_extension");
             return;
         }
 
         try {
-            // Read file content (Java 8 compatible)
             byte[] fileContent;
             try (InputStream inputStream = filePart.getInputStream()) {
-                // Read all bytes from input stream (Java 8 compatible way)
                 java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
                 int bytesRead;
                 byte[] data = new byte[4096];
@@ -77,24 +68,20 @@ public class UploadServlet extends HttpServlet {
                 fileContent = buffer.toByteArray();
             }
 
-            // Validate file content using Apache Tika (prevents extension spoofing)
+            // Validate file content using Apache Tika
             String detectedType = tika.detect(fileContent);
 
-            // Check if detected type is text
             if (!isTextFile(detectedType)) {
                 response.sendRedirect(request.getContextPath() + "/dashboard?error=invalid_content_type");
                 return;
             }
 
             // Process upload asynchronously using ConcurrentUploadService
-            // This provides thread safety and prevents race conditions
             Future<String> uploadFuture = uploadService.processUploadAsync(
                     userId, originalFilename, fileContent, fileContent.length);
 
-            // Wait for upload to complete
             uploadFuture.get();
 
-            // Redirect to dashboard with success message
             response.sendRedirect(request.getContextPath() + "/dashboard?success=upload_complete");
 
         } catch (Exception e) {
@@ -104,9 +91,7 @@ public class UploadServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Extract filename from Part header.
-     */
+    // Extract filename from Part header.
     private String getFileName(Part part) {
         String contentDisposition = part.getHeader("content-disposition");
         if (contentDisposition == null) {
@@ -116,25 +101,20 @@ public class UploadServlet extends HttpServlet {
         for (String token : contentDisposition.split(";")) {
             if (token.trim().startsWith("filename")) {
                 String filename = token.substring(token.indexOf('=') + 1).trim();
-                // Remove quotes
                 return filename.replace("\"", "");
             }
         }
         return null;
     }
 
-    /**
-     * Check if detected MIME type is a text file.
-     * Whitelist approach for security.
-     */
+    // Check if detected MIME type is a text file..
     private boolean isTextFile(String mimeType) {
         if (mimeType == null) {
             return false;
         }
 
-        // Whitelist of allowed text MIME types
         return mimeType.equals("text/plain") ||
-                mimeType.equals("application/octet-stream") || // Generic binary (Tika fallback)
+                mimeType.equals("application/octet-stream") ||
                 mimeType.startsWith("text/");
     }
 }

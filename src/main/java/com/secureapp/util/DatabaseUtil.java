@@ -18,16 +18,13 @@ public final class DatabaseUtil {
     private static final String DB_USER = "sa";
     private static final String DB_PASSWORD = "";
 
-    // Private constructor to prevent instantiation
     private DatabaseUtil() {
         throw new AssertionError("Utility class should not be instantiated");
     }
 
     static {
         try {
-            // Load H2 driver
             Class.forName(DB_DRIVER);
-            // Initialize database tables
             initializeDatabase();
         } catch (ClassNotFoundException e) {
             throw new ExceptionInInitializerError("Failed to load H2 driver: " + e.getMessage());
@@ -44,15 +41,10 @@ public final class DatabaseUtil {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 
-    /**
-     * Initialize database tables if they don't exist.
-     * Uses proper SQL DDL with constraints.
-     */
     private static void initializeDatabase() {
         try (Connection conn = getConnection();
                 Statement stmt = conn.createStatement()) {
 
-            // Create users table
             String createUsersTable = "CREATE TABLE IF NOT EXISTS users (" +
                     "id INT AUTO_INCREMENT PRIMARY KEY, " +
                     "email VARCHAR(255) NOT NULL UNIQUE, " +
@@ -61,7 +53,6 @@ public final class DatabaseUtil {
                     ")";
             stmt.execute(createUsersTable);
 
-            // Create files table
             String createFilesTable = "CREATE TABLE IF NOT EXISTS files (" +
                     "id INT AUTO_INCREMENT PRIMARY KEY, " +
                     "user_id INT NOT NULL, " +

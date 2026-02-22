@@ -16,7 +16,7 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 
 /**
- * File Content Servlet - Implements RF6
+ * File Content Servlet
  * Displays file content securely with:
  * - Output encoding to prevent XSS
  * - Content-Type set to text/plain to prevent execution
@@ -32,14 +32,12 @@ public class FileContentServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Verify session
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("userId") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
-        // Get filename parameter
         String storedFilename = request.getParameter("file");
 
         if (storedFilename == null || storedFilename.isEmpty()) {
@@ -48,7 +46,6 @@ public class FileContentServlet extends HttpServlet {
         }
 
         try {
-            // Verify file exists in database
             FileModel fileModel = fileDAO.getFileByStoredFilename(storedFilename);
 
             if (fileModel == null) {
@@ -56,19 +53,14 @@ public class FileContentServlet extends HttpServlet {
                 return;
             }
 
-            // Read file content
             String fileContent = uploadService.getFileContent(storedFilename);
 
-            // Set response content type to plain text (prevents script execution)
             response.setContentType("text/plain; charset=UTF-8");
             response.setCharacterEncoding("UTF-8");
-
-            // Additional security headers
             response.setHeader("X-Content-Type-Options", "nosniff");
             response.setHeader("Content-Disposition", "inline");
 
-            // Encode output to prevent XSS (even though Content-Type is text/plain)
-            // This is defense in depth
+            // Encode output to prevent XSS
             String encodedContent = Encode.forHtml(fileContent);
 
             // Write content to response
@@ -87,7 +79,6 @@ public class FileContentServlet extends HttpServlet {
             System.err.println("File read error: " + e.getMessage());
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error reading file");
         } catch (Exception e) {
-            // Catch decryption errors (AES operations)
             System.err.println("File decryption error: " + e.getClass().getSimpleName());
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error processing file");
         }

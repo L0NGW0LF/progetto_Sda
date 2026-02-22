@@ -21,12 +21,10 @@ class UserDAOTest {
     @BeforeEach
     void setUp() {
         userDAO = new UserDAO();
-        // Database is automatically initialized via DatabaseUtil.getConnection()
     }
 
     @AfterEach
     void tearDown() throws SQLException {
-        // Clean up test data after each test
         try (Connection conn = DatabaseUtil.getConnection()) {
             conn.createStatement().execute("DELETE FROM files");
             conn.createStatement().execute("DELETE FROM users");
@@ -40,12 +38,6 @@ class UserDAOTest {
         boolean created = userDAO.createUser("test@example.com", "Test@1234");
         assertTrue(created, "User should be created successfully");
     }
-
-    // Note: Null parameter tests removed - DAO throws NPE which is acceptable for
-    // invalid input
-    // Production code validates input before calling DAO (RegisterServlet,
-    // LoginServlet)
-    // The unique constraint on email is enforced at database level
 
     @Test
     void testCreateUser_HashesPassword() throws SQLException {
@@ -70,10 +62,6 @@ class UserDAOTest {
             assertNotEquals(plainPassword, storedHash, "Password should not be stored in plaintext");
         }
     }
-
-    // Note: Null parameter tests removed
-    // DAO throws NPE for null inputs, which is acceptable - servlets validate
-    // before calling DAO
 
     // ==================== authenticateUser Tests ====================
 
@@ -205,9 +193,6 @@ class UserDAOTest {
     }
 
     // ==================== Integration Tests ====================
-
-    // Note: Full lifecycle test removed due to DB state issues between test runs
-    // Individual operations (create, auth, emailExists) are tested separately
 
     // @Test - DISABLED due to DB cleanup issues
     void testFullUserLifecycle_DISABLED() throws SQLException {

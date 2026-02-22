@@ -140,7 +140,6 @@
                 </div>
 
                 <form method="post" action="${pageContext.request.contextPath}/register">
-                    <!-- CSRF Protection: Hidden field with token from session -->
                     <input type="hidden" name="csrf_token" value="${csrfToken}">
 
                     <div class="form-group">

@@ -1,16 +1,17 @@
 package com.secureapp.service;
 
 import com.secureapp.dao.UserDAO;
+import com.secureapp.util.DatabaseUtil;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.*;
 
 /**
- * Test class for ConcurrentUploadService - RF3.8 Concurrency Verification.
+ * Test class for ConcurrentUploadService
  * 
  * This test explicitly demonstrates:
  * 1. Multiple threads accessing shared file resources concurrently
@@ -26,7 +27,7 @@ class ConcurrentUploadServiceTest {
 
     private ConcurrentUploadService uploadService;
     private static final int CONCURRENT_UPLOADS = 10; // Reduced for more stable testing
-    private static final int USER_ID = 1;
+    private int testUserId; // Retrieved dynamically from the DB
     private static final String UPLOAD_DIR = System.getProperty("user.home") + File.separator + "secure-app-uploads";
 
     @BeforeAll
@@ -34,15 +35,25 @@ class ConcurrentUploadServiceTest {
         uploadService = ConcurrentUploadService.getInstance();
 
         // Create test user in database to satisfy foreign key constraint
-        // This user is required for file uploads to work
         UserDAO userDAO = new UserDAO();
+        String testEmail = "test@concurrency.test";
         try {
-            // Create test user with ID=1 for concurrent upload tests
-            userDAO.createUser("test@concurrency.test", "TestPassword123!");
+            userDAO.createUser(testEmail, "TestPassword123!");
         } catch (SQLException e) {
-            // User might already exist, which is fine
+            // User might already exist from a previous test run, which is fine
             if (!e.getMessage().contains("Unique index or primary key violation")) {
                 throw e;
+            }
+        }
+
+        // Retrieve the actual auto-generated user ID from the database
+        try (Connection conn = DatabaseUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(
+                        "SELECT id FROM users WHERE email = ?")) {
+            pstmt.setString(1, testEmail);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                assertTrue(rs.next(), "Test user should exist in database");
+                testUserId = rs.getInt("id");
             }
         }
     }
@@ -101,7 +112,7 @@ class ConcurrentUploadServiceTest {
 
                     // Upload file concurrently
                     Future<String> uploadFuture = uploadService.processUploadAsync(
-                            USER_ID,
+                            testUserId,
                             originalFilename,
                             fileContent,
                             fileContent.length);
@@ -194,7 +205,7 @@ class ConcurrentUploadServiceTest {
                     byte[] fileContent = uniqueContent.getBytes();
 
                     Future<String> uploadFuture = uploadService.processUploadAsync(
-                            USER_ID,
+                            testUserId,
                             "overwrite_test_" + threadId + ".txt",
                             fileContent,
                             fileContent.length);
@@ -250,7 +261,7 @@ class ConcurrentUploadServiceTest {
                     try {
                         byte[] content = ("Iteration content " + uploadId).getBytes();
                         Future<String> future = uploadService.processUploadAsync(
-                                USER_ID,
+                                testUserId,
                                 "consistency_test_" + uploadId + ".txt",
                                 content,
                                 content.length);

@@ -8,7 +8,7 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 /**
- * Authentication Filter - Implements RF3
+ * Authentication Filter
  * Ensures that only authenticated users with valid sessions can access
  * protected resources.
  * Prevents access to resources after session timeout or logout.
@@ -18,7 +18,6 @@ public class AuthFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        // No initialization needed
     }
 
     @Override
@@ -28,22 +27,19 @@ public class AuthFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        // Get session without creating a new one
         HttpSession session = httpRequest.getSession(false);
 
         // Check if session exists and user is authenticated
         if (session == null || session.getAttribute("userId") == null) {
-            // Session is invalid or expired - redirect to login
             httpResponse.sendRedirect(httpRequest.getContextPath() + "/login?error=session_expired");
             return;
         }
 
-        // Session is valid - continue to requested resource
+        // Session is valid
         chain.doFilter(request, response);
     }
 
     @Override
     public void destroy() {
-        // No cleanup needed
     }
 }

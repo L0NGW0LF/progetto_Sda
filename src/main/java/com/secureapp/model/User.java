@@ -12,17 +12,14 @@ public class User {
     private String passwordHash;
     private Timestamp createdAt;
 
-    // Default constructor
     public User() {
     }
 
-    // Constructor for creating new user
     public User(String email, String passwordHash) {
         this.email = email;
         this.passwordHash = passwordHash;
     }
 
-    // Constructor with all fields
     public User(int id, String email, String passwordHash, Timestamp createdAt) {
         this.id = id;
         this.email = email;

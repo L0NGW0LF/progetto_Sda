@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 /**
- * Register Servlet - Implements RF1
+ * Register Servlet
  * Handles user registration with:
  * - Email validation and uniqueness check
  * - Password policy enforcement
@@ -28,7 +28,6 @@ public class RegisterServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Display registration form
         request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
     }
 
@@ -36,29 +35,23 @@ public class RegisterServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Get form parameters
         String email = request.getParameter("email");
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirmPassword");
-
-        // Input validation
         if (email == null || password == null || confirmPassword == null) {
             request.setAttribute("error", Encode.forHtmlContent("All fields are required"));
             request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
             return;
         }
 
-        // Trim and sanitize inputs
         email = ValidationUtil.sanitizeInput(email, 255);
 
-        // Validate email format
         if (!ValidationUtil.isValidEmail(email)) {
             request.setAttribute("error", Encode.forHtmlContent("Invalid email format"));
             request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
             return;
         }
 
-        // Validate password policy
         if (!ValidationUtil.isValidPassword(password)) {
             request.setAttribute("error",
                     Encode.forHtmlContent(
@@ -67,7 +60,6 @@ public class RegisterServlet extends HttpServlet {
             return;
         }
 
-        // Check password confirmation
         if (!password.equals(confirmPassword)) {
             request.setAttribute("error", Encode.forHtmlContent("Passwords do not match"));
             request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
@@ -75,21 +67,16 @@ public class RegisterServlet extends HttpServlet {
         }
 
         try {
-            // Check if email already exists (case-insensitive)
             if (userDAO.emailExists(email)) {
-                // Return a generic error that implies registration failed,
-                // but we can make it a bit more helpful for the user
                 request.setAttribute("error", Encode
                         .forHtmlContent("This email is already registered. Please login or use a different email."));
                 request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
                 return;
             }
 
-            // Create user account
             boolean created = userDAO.createUser(email, password);
 
             if (created) {
-                // Registration successful
                 request.setAttribute("success", "Registration successful. Please login.");
                 response.sendRedirect(request.getContextPath() + "/login?registered=true");
             } else {
@@ -98,7 +85,6 @@ public class RegisterServlet extends HttpServlet {
             }
 
         } catch (SQLException e) {
-            // Log error but don't expose details to user
             System.err.println("Database error during registration: " + e.getMessage());
             request.setAttribute("error", Encode.forHtmlContent("An error occurred. Please try again later."));
             request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);

@@ -81,23 +81,17 @@ public class CsrfUtil {
     public static boolean validateToken(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
 
-        // No session = no valid token
         if (session == null) {
             return false;
         }
 
-        // Get token from request parameter (hidden field)
         String requestToken = request.getParameter(CSRF_TOKEN_PARAM);
 
-        // Get token from session
         String sessionToken = getTokenFromSession(session);
-
-        // Both must exist and match exactly
         if (requestToken == null || sessionToken == null) {
             return false;
         }
 
-        // Constant-time comparison to prevent timing attacks
         return requestToken.equals(sessionToken);
     }
 
@@ -109,7 +103,7 @@ public class CsrfUtil {
      * @return The generated token
      */
     public static String generateAndStoreToken(HttpServletRequest request) {
-        HttpSession session = request.getSession(true); // Create session if needed
+        HttpSession session = request.getSession(true);
         String token = generateToken();
         setTokenInSession(session, token);
         return token;

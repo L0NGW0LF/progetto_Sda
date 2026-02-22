@@ -14,11 +14,9 @@ public class FileModel {
     private long fileSize;
     private Timestamp uploadDate;
 
-    // Default constructor
     public FileModel() {
     }
 
-    // Constructor for new file upload
     public FileModel(int userId, String originalFilename, String storedFilename, long fileSize) {
         this.userId = userId;
         this.originalFilename = originalFilename;
@@ -26,9 +24,8 @@ public class FileModel {
         this.fileSize = fileSize;
     }
 
-    // Constructor with all fields
-    public FileModel(int id, int userId, String originalFilename, String storedFilename, 
-                     long fileSize, Timestamp uploadDate) {
+    public FileModel(int id, int userId, String originalFilename, String storedFilename,
+            long fileSize, Timestamp uploadDate) {
         this.id = id;
         this.userId = userId;
         this.originalFilename = originalFilename;

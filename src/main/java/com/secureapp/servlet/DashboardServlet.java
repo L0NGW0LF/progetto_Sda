@@ -13,10 +13,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
-/**
- * Dashboard Servlet
- * Displays user dashboard with file list and upload functionality.
- */
 @WebServlet("/dashboard")
 public class DashboardServlet extends HttpServlet {
 
@@ -33,11 +29,9 @@ public class DashboardServlet extends HttpServlet {
         }
 
         try {
-            // Get all files from all users (RF6 - users can view files from others)
             List<FileModel> files = fileDAO.getAllFiles();
             request.setAttribute("files", files);
 
-            // Forward to dashboard view
             request.getRequestDispatcher("/WEB-INF/views/dashboard.jsp").forward(request, response);
 
         } catch (SQLException e) {

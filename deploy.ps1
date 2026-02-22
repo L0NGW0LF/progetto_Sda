@@ -25,7 +25,7 @@ function Write-Info {
     Write-Host "INFO: $msg" -ForegroundColor Cyan
 }
 
-function Build-Project {
+function Invoke-ProjectBuild {
     param([bool]$Clean = $false)
     
     Write-Info "Building project..."
@@ -148,7 +148,7 @@ function Deploy-ToTomcat {
     }
 }
 
-function Clean-Project {
+function Clear-Project {
     Write-Info "Cleaning project..."
     if (Test-Path "target") {
         Remove-Item -Recurse -Force "target" -ErrorAction SilentlyContinue | Out-Null
@@ -164,20 +164,20 @@ try {
     if ($Action -eq "run") { $Action = "run-jetty" }
 
     if ($Action -eq "build") {
-        Build-Project -Clean $true
+        Invoke-ProjectBuild -Clean $true
     }
     elseif ($Action -eq "run-jetty") {
-        if (Build-Project -Clean $false) {
+        if (Invoke-ProjectBuild -Clean $false) {
             Start-JettyServer -ServerPort $Port
         }
     }
     elseif ($Action -eq "deploy-tomcat") {
-        if (Build-Project -Clean $false) {
+        if (Invoke-ProjectBuild -Clean $false) {
             Deploy-ToTomcat -TomcatPath $TomcatHome
         }
     }
     elseif ($Action -eq "clean") {
-        Clean-Project
+        Clear-Project
     }
     else {
         Write-Info "Usage: .\deploy.ps1 -Action [build|run|deploy-tomcat|clean]"

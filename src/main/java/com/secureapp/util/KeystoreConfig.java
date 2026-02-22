@@ -16,38 +16,25 @@ import java.util.Properties;
  * - Passwords from environment variables only (not hardcoded)
  * - Singleton pattern to load keystore once at startup
  * - No secrets logged or exposed
- * 
- * Follows GEMINI.md requirement 4.8:
- * "Keystore / env secrets; rotazione chiavi prevista (almeno design)"
  */
 public class KeystoreConfig {
 
     private static final String PROPERTIES_FILE = "application.properties";
 
-    // Configuration keys
     private static final String KEYSTORE_PATH_KEY = "keystore.path";
     private static final String KEYSTORE_PASSWORD_KEY = "keystore.password";
     private static final String AES_KEY_ALIAS_KEY = "keystore.aes.key.alias";
     private static final String KEY_PASSWORD_KEY = "keystore.key.password";
-
-    // Singleton instance
     private static volatile KeystoreConfig instance;
 
-    // Loaded configuration
     private final String keystorePath;
     private final char[] keystorePassword;
     private final String aesKeyAlias;
     private final char[] keyPassword;
     private final SecretKey aesKey;
 
-    /**
-     * Private constructor - loads configuration and keystore.
-     */
     private KeystoreConfig() throws Exception {
-        // Load properties
         Properties props = loadProperties();
-
-        // Get configuration with environment variable precedence
         String rawPath = getConfigValue(props, KEYSTORE_PATH_KEY, "KEYSTORE_PATH");
         this.keystorePath = resolvePath(rawPath);
 
@@ -59,23 +46,17 @@ public class KeystoreConfig {
         String keyPwd = getConfigValue(props, KEY_PASSWORD_KEY, "KEY_PASSWORD");
         this.keyPassword = keyPwd != null ? keyPwd.toCharArray() : null;
 
-        // Validate configuration
         if (this.keystorePath == null || this.keystorePassword == null) {
             throw new IllegalStateException(
                     "Keystore configuration incomplete. Set KEYSTORE_PATH and KEYSTORE_PASSWORD environment variables.");
         }
 
-        // Load AES key from keystore
         this.aesKey = loadAesKey();
 
-        // Log success (without sensitive data)
         System.out.println("AES encryption initialized with keystore: " + this.keystorePath);
         System.out.println("AES key alias: " + aesKeyAlias);
     }
 
-    /**
-     * Resolve keystore path to be cross-platform and robust.
-     */
     private String resolvePath(String path) {
         if (path == null)
             return null;
@@ -85,7 +66,6 @@ public class KeystoreConfig {
             return path;
         }
 
-        // Try user home/secure-app-config/keystore.p12 (cross-platform default)
         String userHomePath = System.getProperty("user.home") + java.io.File.separator + "secure-app-config"
                 + java.io.File.separator + "keystore.p12";
         if (new java.io.File(userHomePath).exists()) {
@@ -93,13 +73,9 @@ public class KeystoreConfig {
             return userHomePath;
         }
 
-        return path; // Fall back to original and let validation fail if needed
+        return path;
     }
 
-    /**
-     * Get singleton instance.
-     * Uses double-checked locking for thread-safe lazy initialization.
-     */
     public static KeystoreConfig getInstance() throws Exception {
         if (instance == null) {
             synchronized (KeystoreConfig.class) {
@@ -111,9 +87,6 @@ public class KeystoreConfig {
         return instance;
     }
 
-    /**
-     * Load application.properties from classpath.
-     */
     private Properties loadProperties() throws IOException {
         Properties props = new Properties();
         try (InputStream input = getClass().getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
@@ -138,7 +111,6 @@ public class KeystoreConfig {
      * @return Configuration value
      */
     private String getConfigValue(Properties props, String propKey, String envKey) {
-        // Check environment variable first
         String envValue = System.getenv(envKey);
         if (envValue != null && !envValue.isEmpty()) {
             return envValue;
@@ -150,10 +122,8 @@ public class KeystoreConfig {
             return sysProp;
         }
 
-        // Fall back to properties file (with ${ENV_VAR} support)
         String propValue = props.getProperty(propKey);
         if (propValue != null) {
-            // Simple ${VAR} substitution
             if (propValue.startsWith("${") && propValue.contains(":")) {
                 int colonIndex = propValue.indexOf(':');
                 String varName = propValue.substring(2, colonIndex);
@@ -166,15 +136,12 @@ public class KeystoreConfig {
         return propValue;
     }
 
-    /**
-     * Load AES secret key from keystore.
-     */
+    // Load AES secret key from keystore.
     private SecretKey loadAesKey() throws Exception {
         try (FileInputStream fis = new FileInputStream(keystorePath)) {
             KeyStore keystore = KeyStore.getInstance("PKCS12");
             keystore.load(fis, keystorePassword);
 
-            // Get AES key
             KeyStore.SecretKeyEntry entry = (KeyStore.SecretKeyEntry) keystore.getEntry(
                     aesKeyAlias,
                     new KeyStore.PasswordProtection(keyPassword));
@@ -188,16 +155,12 @@ public class KeystoreConfig {
         }
     }
 
-    /**
-     * Get AES secret key for encryption/decryption.
-     */
+    // Get AES secret key for encryption/decryption.
     public SecretKey getAesKey() {
         return aesKey;
     }
 
-    /**
-     * Get keystore path (for logging/debugging only).
-     */
+    // Get keystore path (for logging/debugging only).
     public String getKeystorePath() {
         return keystorePath;
     }

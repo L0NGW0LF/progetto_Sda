@@ -7,25 +7,13 @@
 
     <display-name>Secure Web Application</display-name>
 
-    <!-- Session configuration for security -->
     <session-config>
-        <!-- Session timeout: 30 minutes -->
         <session-timeout>30</session-timeout>
-        
-        <!-- Cookie configuration -->
         <cookie-config>
-            <!-- HttpOnly flag: prevents JavaScript access to session cookies -->
             <http-only>true</http-only>
-            
-            <!-- Secure flag: ensures cookies are only sent over HTTPS -->
             <secure>true</secure>
-            
-            <!-- SameSite attribute for CSRF protection -->
-            <!-- Strict: cookie only sent in same-site context -->
             <same-site>Strict</same-site>
         </cookie-config>
-        
-        <!-- Tracking mode: use cookies only (not URL rewriting) -->
         <tracking-mode>COOKIE</tracking-mode>
     </session-config>
 

@@ -227,7 +227,6 @@
                         <h2>📤 Upload File</h2>
                         <form method="post" action="${pageContext.request.contextPath}/upload"
                             enctype="multipart/form-data" class="upload-form">
-                            <!-- CSRF Protection: Hidden field with token from session -->
                             <input type="hidden" name="csrf_token" value="${csrfToken}">
 
                             <div class="form-group">

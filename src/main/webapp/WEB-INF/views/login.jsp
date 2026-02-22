@@ -145,7 +145,6 @@
                 </c:if>
 
                 <form method="post" action="${pageContext.request.contextPath}/login">
-                    <!-- CSRF Protection: Hidden field with token from session -->
                     <input type="hidden" name="csrf_token" value="${csrfToken}">
 
                     <div class="form-group">

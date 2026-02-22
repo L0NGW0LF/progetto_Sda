@@ -52,6 +52,15 @@ class BruteForceProtectionServiceTest {
     }
 
     @Test
+    void testRecordFailedAttempt_withNullIp() {
+        String email = "test@test.com";
+        String ip = null;
+
+        service.recordFailedAttempt(ip, email);
+
+    }
+
+    @Test
     void testRecordSuccessfulLogin_ResetsCounters() {
         String ip = "192.168.1.2";
         String email = "test2@test.com";
@@ -75,12 +84,10 @@ class BruteForceProtectionServiceTest {
         String ip = "192.168.1.3";
         String email = "test3@test.com";
 
-        // Record exactly 5 failed attempts (max)
         for (int i = 0; i < 5; i++) {
             service.recordFailedAttempt(ip, email);
         }
 
-        // Should now be blocked
         assertTrue(service.isBlocked(ip, email),
                 "Should be blocked after 5 failed attempts");
     }
